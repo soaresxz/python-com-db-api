@@ -1,7 +1,6 @@
 import sqlite3
 from typing import List, Optional
 from enum import Enum
-
 from database import conectar
 
 class Categoria(Enum):
@@ -38,6 +37,14 @@ def listar_livros() -> List[sqlite3.Row]:
             "SELECT * FROM livros WHERE livro_status != ?;", (Status.EXCLUIDO.value,)
         )
         return cursor.fetchall()
+    
+def buscar_livro_por_id(livro_id: int) -> Optional[sqlite3.Row]:
+    """Busca um único livro pelo seu ID."""
+    with conectar() as conn:
+        cursor = conn.execute(
+            "SELECT * FROM livros WHERE id = ?;", (livro_id,)
+        )
+        return cursor.fetchone()
 
 def buscar_livros(termo: str) -> List[sqlite3.Row]:
     """Busca livros por título, autor ou editora."""

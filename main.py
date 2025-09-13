@@ -26,27 +26,37 @@ def criar_livro(livro: schemas.LivroCreate):
         ano=livro.ano
     )
     livro_criado = repository.buscar_livro_por_id(novo_id)
-    return livro_criado
+    return dict(livro_criado)
 
 @app.get("/livros/", response_model=List[schemas.Livro], tags=["Livros"])
 def listar_todos_os_livros():
     """Retorna uma lista de todos os livros (exceto os removidos logicamente)."""
-    return repository.listar_livros()
+    livros_db = repository.listar_livros()
+    return [dict(livro) for livro in livros_db]
 
 @app.get("/livros/buscar", response_model=List[schemas.Livro], tags=["Livros"])
 def buscar_livros_por_termo(termo: str = Query(..., min_length=3, description="Termo para buscar em títulos, autores ou editoras.")):
     """Busca por livros que contenham o termo no título, autor ou editora."""
-    return repository.buscar_livros(termo)
+    livros_db = repository.buscar_livros(termo)
+    return [dict(livro) for livro in livros_db]
 
+@app.get("/livros/{livro_id}", response_model=schemas.Livro, tags=["Livros"])
+def obter_livro_por_id(livro_id: int):
+    """Obtém os detalhes de um livro específico pelo seu ID."""
+    livro = repository.buscar_livro_por_id(livro_id)
+    if not livro:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Livro não encontrado")
+    return dict(livro)
 
 @app.patch("/livros/{livro_id}/disponibilidade", response_model=schemas.Livro, tags=["Livros"])
-def atualizar_disponibilidade_livro(livro_id: int, payload: schemas.UpdateDisponibilidade):
+def atu_disp(livro_id: int, payload: schemas.UpdateDisponibilidade):
     """Atualiza o status de disponibilidade de um livro (disponível/emprestado)."""
     if not repository.buscar_livro_por_id(livro_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Livro não encontrado")
 
     repository.atu_disp(livro_id, payload.disponivel)
-    return repository.buscar_livro_por_id(livro_id)
+    livro_atualizado = repository.buscar_livro_por_id(livro_id)
+    return dict(livro_atualizado)
 
 @app.delete("/livros/{livro_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Livros"])
 def remover_livro_logicamente(livro_id: int):
@@ -62,5 +72,5 @@ def remover_livro_permanentemente(livro_id: int):
     Esta ação não pode ser desfeita.
     """
     if not repository.deletar_fisico(livro_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Livro não encontrado")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Livro não encontrado!")
     return None

@@ -72,5 +72,5 @@ def remover_livro_permanentemente(livro_id: int):
     Esta ação não pode ser desfeita.
     """
     if not repository.deletar_fisico(livro_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Livro não encontrado!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Livro não encontrado")
     return None
